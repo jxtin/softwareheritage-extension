@@ -1,0 +1,20 @@
+{
+    "name": "SH Extension",
+    "version": "0.1",
+    "description": "Attempt at a simple extension for Software Heritage",
+    "manifest_version": 3,
+    "author": "Jxtin",
+    "action": {
+        "default_popup": "index.html",
+        "default_title": "Software Heritage"
+    },
+    "permissions": [
+        "tabs"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [
+        "https://archive.softwareheritage.org/api/1/origin/"
+    ]
+}
