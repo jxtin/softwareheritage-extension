@@ -73,14 +73,34 @@ function checkLink() {
 // a series of if-else statements to check the url and convert it to the preferred format
 // if the url is already in the preferred format, then do nothing
 function convertUrl(url) {
-
+    if (url.includes("github.com")) {
+        return url;
+    }
+    else if (url.includes("gitlab.com")) {
+        return url + ".git";
+    }
+    else if (url.includes("bitbucket.org")) {
+        // split the url at  '/src'
+        // return the url before '/src'
+        return url.split("/src")[0] + ".git";
+    }
+    else if (url.includes("git.savannah.gnu.org")) {
+        return url;
+    }
+    else if (url.includes("codeberg.org")) {
+        return url + ".git";
+    }
+    else {
+        return url;
+    }
 }
 
 
 
 async function getOrigin(url) {
 
-    // url = convertUrl(url);
+    url = convertUrl(url);
+    console.log(url);
 
     const res = await fetch(`https://archive.softwareheritage.org/api/1/origin/${url}/get`);
     // check if the response is ok
