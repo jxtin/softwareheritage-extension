@@ -42,6 +42,9 @@ console.log(links);
 
 
 
+const visited = { found: [], notFound: [] };
+
+
 
 function checkLink() {
     chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
@@ -54,12 +57,12 @@ function checkLink() {
 
         if (found) {
             // then show the icon
-            console.log("website found")
+            // website is in list of domains that host SH repositories
             getOrigin(currUrl);
         }
         else {
             // else hide the icon
-            console.log("website not found")
+            console.log("website does not host SH repositories");
             chrome.action.setBadgeText({ text: "!" });
             chrome.action.setBadgeBackgroundColor({ color: '#00F' }, () => {
                 // callback
@@ -74,9 +77,28 @@ function checkLink() {
 // if the url is already in the preferred format, then do nothing
 function convertUrl(url) {
     if (url.includes("github.com")) {
-        return url;
+        // get count of '/' in the url
+        // if count is 4, then return the url
+        if (url.split("/").length === 4) {
+            console.log("url is already in the preferred format");
+            console.log(url);
+            return url;
+        }
+        else if (url.split("/").length > 4) {
+            // split the url at '/tree'
+            // return the url before '/tree'
+            console.log(url.split("/tree")[0]);
+            return url.split("/tree")[0];
+        }
+        else {
+            return "https://github.com/";
+        }
+
     }
     else if (url.includes("gitlab.com")) {
+        if (url.includes("/-/")) {
+            url = url.split("/-/")[0];
+        }
         return url + ".git";
     }
     else if (url.includes("bitbucket.org")) {
@@ -98,27 +120,54 @@ function convertUrl(url) {
 
 
 async function getOrigin(url) {
-
+    console.log(url);
     url = convertUrl(url);
     console.log(url);
+    console.log(visited);
+    // check if the url is already in the list of visited websites
+    const found = visited.found.find(website => website.url === url);
+    const notFound = visited.notFound.find(website => website.url === url);
+    // find url in visited.found
+    console.log(found);
+    console.log(notFound);
 
-    const res = await fetch(`https://archive.softwareheritage.org/api/1/origin/${url}/get`);
-    // check if the response is ok
-    if (res.ok) {
-        const record = await res.json();
-        console.log(record);
+
+    if (found) {
+        console.log("found in visited, and archived");
         chrome.action.setBadgeText({ text: "." });
         chrome.action.setBadgeBackgroundColor({ color: '#0F0' }, () => {
             // callback
         });
     }
-    else {
-        console.log(res.status);
+    else if (notFound) {
+        console.log("found in visited, but not archived");
         chrome.action.setBadgeText({ text: "!" });
         chrome.action.setBadgeBackgroundColor({ color: '#F00' }, () => {
+            // callback
         });
+    }
+    else {
+        console.log("not found in visited");
 
+        const res = await fetch(`https://archive.softwareheritage.org/api/1/origin/${url}/get`);
 
+        // check if the response is ok
+        if (res.ok) {
+            const record = await res.json();
+            console.log(record);
+            visited.found.push(record);
+            chrome.action.setBadgeText({ text: "." });
+            chrome.action.setBadgeBackgroundColor({ color: '#0F0' }, () => {
+                // callback
+            });
+        }
+        else {
+            console.log(res.status);
+            chrome.action.setBadgeText({ text: "!" });
+            chrome.action.setBadgeBackgroundColor({ color: '#F00' }, () => {
+            });
+            visited.notFound.push({ url: url, status: res.status });
+        }
     }
 }
 
